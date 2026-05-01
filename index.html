@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>처방약 매칭 도우미</title>
+<title>다보스병원 처방약 매칭 도우미</title>
 <style>
   :root {
     --bg: #FAF8F3;
@@ -53,6 +53,12 @@
     color: white; font-size: 20px;
   }
   h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; }
+  .subtitle {
+    font-size: 0.8125rem;
+    color: var(--text-2);
+    margin-top: 2px;
+    font-weight: 400;
+  }
   .meta-row { display: flex; gap: 16px; align-items: center; color: var(--text-2); font-size: 0.875rem; flex-wrap: wrap; }
   .meta-pill {
     background: var(--surface);
@@ -446,11 +452,13 @@
     margin-top: 32px;
     padding: 20px 0;
     text-align: center;
-    color: var(--text-3);
-    font-size: 0.8125rem;
+    color: var(--text-2);
+    font-size: 0.875rem;
+    font-weight: 500;
     border-top: 1px solid var(--border);
   }
-  footer p { margin: 0; line-height: 1.6; }
+  footer p { margin: 0 0 4px 0; line-height: 1.6; }
+  footer p:last-child { margin-bottom: 0; }
   footer a { color: var(--text-2); text-decoration: underline; text-underline-offset: 2px; }
 
   @media (max-width: 600px) {
@@ -468,7 +476,8 @@
     <div class="logo-row">
       <div class="logo">℞</div>
       <div>
-        <h1>처방약 매칭 도우미</h1>
+        <h1>다보스병원 처방약 매칭 도우미</h1>
+        <div class="subtitle">by 심장내과</div>
       </div>
     </div>
     <div class="meta-row">
