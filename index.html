@@ -229,6 +229,97 @@
   }
   @keyframes ocr-spin { to { transform: rotate(360deg); } }
 
+  /* OCR phone tip */
+  .ocr-tip {
+    margin-top: 8px;
+    padding: 8px 12px;
+    font-size: 0.8125rem;
+    color: var(--text-2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+  }
+  .link-btn:hover { color: var(--primary-hover); }
+  .phone-tip {
+    margin-top: 4px;
+    padding: 12px 14px;
+    background: var(--surface-alt);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: var(--text-2);
+  }
+  .phone-tip-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 4px 0;
+    flex-wrap: wrap;
+  }
+  .phone-tip-row + .phone-tip-row {
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+    padding-top: 8px;
+  }
+  .phone-tip-label {
+    font-weight: 500;
+    color: var(--text);
+    flex-shrink: 0;
+    min-width: 130px;
+  }
+  .phone-tip code {
+    background: white;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.875em;
+    border: 1px solid var(--border);
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+  }
+  .phone-tip-note {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-3);
+    font-style: italic;
+  }
+
+  /* Fuzzy correction info */
+  .fuzzy-info {
+    margin-top: 6px;
+    padding: 6px 10px;
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    color: #9A3412;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .fuzzy-tag {
+    font-size: 0.625rem;
+    padding: 1px 6px;
+    background: #EA580C;
+    color: white;
+    border-radius: 3px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
   /* Textarea */
   textarea {
     width: 100%;
@@ -598,7 +689,22 @@
         <input type="file" id="ocrFile" accept="image/*" capture="environment" hidden>
         <div class="ocr-icon">📷</div>
         <div class="ocr-title">처방전·메모 사진으로 입력</div>
-        <div class="ocr-hint">클릭하거나 사진을 드래그하세요 · 모바일에선 카메라로 직접 촬영 가능</div>
+        <div class="ocr-hint">클릭/드래그/카메라 촬영 · 자동 한글 OCR + 사전 보정</div>
+      </div>
+      <div class="ocr-tip">
+        💡 <strong>더 정확한 방법</strong>: 폰의 텍스트 인식 후 붙여넣기
+        <button type="button" class="link-btn" id="phoneTipBtn">자세히</button>
+      </div>
+      <div class="phone-tip" id="phoneTip" hidden>
+        <div class="phone-tip-row">
+          <span class="phone-tip-label">📱 iPhone (iOS 15+)</span>
+          <span>사진 앱 → 처방전 텍스트를 길게 누르기 → <code>복사</code> → 입력란에 <code>⌘V</code> 붙여넣기</span>
+        </div>
+        <div class="phone-tip-row">
+          <span class="phone-tip-label">📱 Android</span>
+          <span>Google Lens 또는 빅스비 비전으로 텍스트 인식 → <code>복사</code> → 입력란에 붙여넣기</span>
+        </div>
+        <div class="phone-tip-note">폰 OCR은 한국어 인쇄 텍스트 정확도 95%+ — Tesseract보다 훨씬 정확합니다.</div>
       </div>
       <div class="ocr-status" id="ocrStatus" hidden></div>
     </div>
@@ -728,14 +834,187 @@ function parseInputLine(line) {
 }
 
 // =====================================================
+// 한글약명 사전 + Fuzzy 매칭 (OCR 보정용)
+// =====================================================
+// 본원 마스터 + HIRA의 모든 한글 베이스를 사전으로 구축
+const MASTER_BASES = new Set();
+const MASTER_DISPLAY = new Map(); // base → 첫 발견된 한글 display
+for (const m of MASTER) {
+  if (m.b && m.b.length >= 2) {
+    MASTER_BASES.add(m.b);
+    if (!MASTER_DISPLAY.has(m.b)) {
+      // 본원 d에서 함량/괄호 제거한 깨끗한 한글 이름 추출
+      const cleanDisplay = (m.d || '').replace(/[\[\(].*$/, '').trim();
+      MASTER_DISPLAY.set(m.b, cleanDisplay || m.b);
+    }
+  }
+}
+
+// 통합 사전: base(정규화) → display(원본)
+const DICT_DISPLAY = new Map();
+for (const [b, d] of MASTER_DISPLAY) DICT_DISPLAY.set(b, d);
+for (const k in HIRA) {
+  if (k.length >= 2 && !DICT_DISPLAY.has(k)) {
+    DICT_DISPLAY.set(k, HIRA[k][0].b);
+  }
+}
+
+// 길이별 인덱싱 (성능 향상)
+const DICT_BY_LEN = {};
+for (const k of DICT_DISPLAY.keys()) {
+  const L = k.length;
+  if (!DICT_BY_LEN[L]) DICT_BY_LEN[L] = [];
+  DICT_BY_LEN[L].push(k);
+}
+
+// Levenshtein 거리 (편집 거리)
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  const al = a.length, bl = b.length;
+  if (al === 0) return bl;
+  if (bl === 0) return al;
+  let prev = new Array(bl + 1);
+  let curr = new Array(bl + 1);
+  for (let j = 0; j <= bl; j++) prev[j] = j;
+  for (let i = 1; i <= al; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= bl; j++) {
+      const cost = a[i-1] === b[j-1] ? 0 : 1;
+      curr[j] = Math.min(curr[j-1] + 1, prev[j] + 1, prev[j-1] + cost);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[bl];
+}
+
+// 가장 가까운 사전 단어 찾기 (Fuzzy)
+function fuzzyFindBase(target) {
+  if (!target || target.length < 2) return null;
+  const tlen = target.length;
+  const maxDist = tlen >= 6 ? 2 : 1;
+  
+  // 후보 수집: 거리 ≤ maxDist
+  const candidates = [];
+  for (let L = Math.max(2, tlen - 1); L <= tlen + 1; L++) {
+    const list = DICT_BY_LEN[L];
+    if (!list) continue;
+    for (const w of list) {
+      const d = levenshtein(target, w);
+      if (d === 0) return w; // 정확 매칭 (호출 전 체크돼야 정상이지만 방어)
+      if (d <= maxDist) {
+        candidates.push({
+          w,
+          d,
+          sameFirst: w[0] === target[0],
+          lenDiff: Math.abs(L - tlen),
+        });
+      }
+    }
+  }
+  
+  if (candidates.length === 0) return null;
+  
+  // 정렬 우선순위: ① 거리 작음, ② 첫 글자 같음, ③ 길이 차이 작음
+  candidates.sort((a, b) =>
+    (a.d - b.d) ||
+    ((a.sameFirst ? 0 : 1) - (b.sameFirst ? 0 : 1)) ||
+    (a.lenDiff - b.lenDiff)
+  );
+  
+  // 1등·2등이 동일 우선순위면 모호함
+  if (candidates.length > 1) {
+    const top = candidates[0], next = candidates[1];
+    const ambiguous = top.d === next.d && top.sameFirst === next.sameFirst && top.lenDiff === next.lenDiff;
+    if (ambiguous) {
+      // 첫 글자 다르면 단일 한 글자 차이로는 신뢰 어려움 → 보정 포기
+      if (!top.sameFirst) return null;
+      // 첫 글자 같으면 가장 흔한 케이스(오타 가능성) → 첫 후보 사용
+    }
+  }
+  
+  return candidates[0].w;
+}
+
+// OCR 결과 한 줄 보정
+function correctOcrLine(line) {
+  if (!line || !line.trim() || line.trim().length < 2) {
+    return { line, changed: false };
+  }
+  
+  // 첫 한글+제형 청크 추출
+  const km = line.match(/^([가-힣][가-힣]*)/);
+  if (!km) return { line, changed: false };
+  const koreanChunk = km[1];
+  if (koreanChunk.length < 2) return { line, changed: false };
+  
+  // 정규화 베이스 (제형 분리)
+  const baseN = normalizeBase(koreanChunk);
+  if (!baseN || baseN.length < 2) return { line, changed: false };
+  
+  // 정확 매칭 있으면 보정 불필요
+  if (DICT_DISPLAY.has(baseN)) return { line, changed: false };
+  
+  // Fuzzy 매칭
+  const found = fuzzyFindBase(baseN);
+  if (!found) return { line, changed: false };
+  
+  // 보정된 display로 교체
+  const correctDisplay = DICT_DISPLAY.get(found) || found;
+  // 원본 koreanChunk에서 제형 부분 보존 시도
+  const formMatch = koreanChunk.match(/(연질캡슐|경질캡슐|서방캡슐|장용캡슐|서방정|장용정|구강정|설하정|시럽|캡슐|연고|크림|로션|패치|패취|에어|주사|스프레이|점안액|좌약|정|산|액|환|포|겔)$/);
+  const finalReplacement = formMatch
+    ? correctDisplay.replace(/(정|캡슐|시럽|연고|크림|로션|패치|패취|에어|주사|점안액|좌약|산|액|환|포|겔)$/, '') + formMatch[0]
+    : correctDisplay;
+  
+  const newLine = line.replace(koreanChunk, finalReplacement);
+  return {
+    line: newLine,
+    changed: true,
+    from: koreanChunk,
+    to: finalReplacement,
+  };
+}
+
+// 전체 텍스트 보정
+function correctOcrText(text) {
+  const lines = text.split('\n');
+  const out = [];
+  const corrections = [];
+  for (const line of lines) {
+    const r = correctOcrLine(line);
+    out.push(r.line);
+    if (r.changed) corrections.push({ from: r.from, to: r.to });
+  }
+  return { text: out.join('\n'), corrections };
+}
+
+// =====================================================
 // 매칭 로직
 // =====================================================
 function matchOne(input) {
-  const inputBase = normalizeBase(input.name);
+  let inputBase = normalizeBase(input.name);
   let inputIng = input.ingredient;
   let inputDose = input.dose || extractDoseFromName(input.name);
   let inputDoseMcg = normalizeDoseToMcg(inputDose);
-  let hiraInfo = null; // HIRA로 보강된 경우 메타정보
+  let hiraInfo = null;
+  let fuzzyCorrection = null;
+
+  // Fuzzy 보정: 본원/HIRA 어디에도 정확 매칭 안 되면 가장 가까운 베이스로 보정 시도
+  if (inputBase && inputBase.length >= 2) {
+    const inMaster = MASTER_BASES.has(inputBase);
+    const inHira = HIRA[inputBase];
+    if (!inMaster && !inHira) {
+      const found = fuzzyFindBase(inputBase);
+      if (found && found !== inputBase) {
+        fuzzyCorrection = {
+          from: inputBase,
+          to: found,
+          display: DICT_DISPLAY.get(found) || found,
+        };
+        inputBase = found; // 이후 매칭은 보정된 베이스로 진행
+      }
+    }
+  }
 
   const sortByStockAndCombo = (a, b) => {
     const aStop = a.s === '품절약' ? 1 : 0;
@@ -770,6 +1049,7 @@ function matchOne(input) {
         otherDoseStart: withDose.length,
         inputIng,
         inputDose,
+        fuzzyCorrection,
       };
     }
   }
@@ -839,6 +1119,7 @@ function matchOne(input) {
         inputDose,
         partial: true,
         hiraInfo,
+        fuzzyCorrection,
       };
     }
   }
@@ -862,13 +1143,13 @@ function matchOne(input) {
         inputIng,
         inputDose,
         hiraInfo,
+        fuzzyCorrection,
       };
     }
   }
 
   // 4b) 복합제 — HIRA에서 받은 복합 성분으로 각각 본원 검색
   if (hiraInfo && hiraInfo.isCombo) {
-    // 모든 성분이 본원에 있는지 / 일부라도 매칭되는지 검색
     const componentMatches = hiraInfo.ingredients.map(ing => {
       const ingNorm = normalize(ing.n);
       const found = MASTER.filter(m =>
@@ -883,6 +1164,7 @@ function matchOne(input) {
       hiraInfo,
       inputIng,
       inputDose,
+      fuzzyCorrection,
     };
   }
 
@@ -893,6 +1175,7 @@ function matchOne(input) {
     inputIng,
     inputDose,
     hiraInfo,
+    fuzzyCorrection,
   };
 }
 
@@ -964,6 +1247,16 @@ function renderResult(r) {
   // HIRA 자동 인식 메타정보 (있으면 표시)
   if (r.hiraInfo) {
     html += renderHiraInfo(r.hiraInfo);
+  }
+
+  // Fuzzy 보정 안내 (오타 자동 교정된 경우)
+  if (r.fuzzyCorrection) {
+    html += `
+      <div class="fuzzy-info">
+        <span class="fuzzy-tag">자동 보정</span>
+        <span>입력 "${escapeHtml(r.input.name)}" → "${escapeHtml(r.fuzzyCorrection.display)}"로 인식</span>
+      </div>
+    `;
   }
 
   // 복합제 분석 모드
@@ -1117,6 +1410,11 @@ document.getElementById('helpBtn').addEventListener('click', () => {
   help.hidden = !help.hidden;
 });
 
+document.getElementById('phoneTipBtn').addEventListener('click', () => {
+  const tip = document.getElementById('phoneTip');
+  tip.hidden = !tip.hidden;
+});
+
 let searchTimer = null;
 document.getElementById('searchBox').addEventListener('input', (e) => {
   clearTimeout(searchTimer);
@@ -1213,17 +1511,26 @@ async function processImage(file) {
       return;
     }
 
-    // textarea에 추가 (기존 내용 보존)
+    // 사전 보정 적용
+    const { text: corrected, corrections } = correctOcrText(cleaned);
+
+    // textarea에 보정된 텍스트 추가
     const textarea = document.getElementById('input');
     if (textarea.value.trim()) {
-      textarea.value = textarea.value.replace(/\s*$/, '') + '\n' + cleaned;
+      textarea.value = textarea.value.replace(/\s*$/, '') + '\n' + corrected;
     } else {
-      textarea.value = cleaned;
+      textarea.value = corrected;
     }
 
-    const lineCount = cleaned.split('\n').length;
-    setOcrStatus(`✓ ${lineCount}줄 추출 완료 — 입력란에서 검토·수정 후 [매칭 시작]`, 'success');
-    setTimeout(() => { document.getElementById('ocrStatus').hidden = true; }, 6000);
+    const lineCount = corrected.split('\n').filter(l => l.trim()).length;
+    let msg = `✓ ${lineCount}줄 추출 완료 — 검토 후 [매칭 시작]`;
+    if (corrections.length > 0) {
+      const sample = corrections.slice(0, 2).map(c => `${c.from}→${c.to}`).join(', ');
+      const more = corrections.length > 2 ? ` 외 ${corrections.length - 2}건` : '';
+      msg = `✓ ${lineCount}줄 추출, ${corrections.length}건 자동 보정 (${sample}${more})`;
+    }
+    setOcrStatus(msg, 'success');
+    setTimeout(() => { document.getElementById('ocrStatus').hidden = true; }, 8000);
 
   } catch (e) {
     console.error(e);
