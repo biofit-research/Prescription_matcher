@@ -320,6 +320,86 @@
     flex-shrink: 0;
   }
 
+  /* Pill ID external link section */
+  .pill-id-section {
+    margin-top: 12px;
+    padding: 14px;
+    background: var(--surface-alt);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .pill-id-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .pill-id-icon { font-size: 1.125rem; }
+  .pill-id-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .pill-id-desc {
+    font-size: 0.8125rem;
+    color: var(--text-2);
+    line-height: 1.55;
+    margin-bottom: 10px;
+  }
+  .pill-id-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .pill-id-btn {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: relative;
+  }
+  .pill-id-btn:hover {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+  }
+  .pill-id-btn-primary {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+  }
+  .pill-id-btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+  }
+  .pill-id-btn-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .pill-id-btn-sub {
+    font-size: 0.75rem;
+    opacity: 0.85;
+    line-height: 1.3;
+  }
+  .pill-id-btn-icon {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 0.9375rem;
+    opacity: 0.7;
+  }
+  @media (max-width: 480px) {
+    .pill-id-btn { min-width: 100%; }
+  }
+
   /* Textarea */
   textarea {
     width: 100%;
@@ -707,6 +787,28 @@
         <div class="phone-tip-note">폰 OCR은 한국어 인쇄 텍스트 정확도 95%+ — Tesseract보다 훨씬 정확합니다.</div>
       </div>
       <div class="ocr-status" id="ocrStatus" hidden></div>
+
+      <div class="pill-id-section">
+        <div class="pill-id-header">
+          <span class="pill-id-icon">💊</span>
+          <span class="pill-id-title">약 모양으로 찾기</span>
+        </div>
+        <div class="pill-id-desc">
+          이름이 안 보이고 알약만 있을 때 — 식약처·약학정보원 공식 사이트에서 모양·색상·각인으로 검색 후, 확인된 한글 약 이름을 위 입력란에 붙여넣으세요.
+        </div>
+        <div class="pill-id-buttons">
+          <a href="https://nedrug.mfds.go.kr/searchDrug" target="_blank" rel="noopener" class="pill-id-btn pill-id-btn-primary">
+            <span class="pill-id-btn-label">식약처 의약품안전나라</span>
+            <span class="pill-id-btn-sub">낱알 검색 · 정부 공식</span>
+            <span class="pill-id-btn-icon">↗</span>
+          </a>
+          <a href="https://www.health.kr/searchIdentity/search.asp" target="_blank" rel="noopener" class="pill-id-btn">
+            <span class="pill-id-btn-label">약학정보원</span>
+            <span class="pill-id-btn-sub">의약품 식별 전문</span>
+            <span class="pill-id-btn-icon">↗</span>
+          </a>
+        </div>
+      </div>
     </div>
 
     <textarea id="input" placeholder="예시:
