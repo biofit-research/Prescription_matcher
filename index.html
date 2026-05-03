@@ -60,6 +60,60 @@
     font-weight: 400;
   }
   .meta-row { display: flex; gap: 16px; align-items: center; color: var(--text-2); font-size: 0.875rem; flex-wrap: wrap; }
+  .hira-refresh-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1;
+    padding: 0;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .hira-refresh-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-soft);
+  }
+  .hira-refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .hira-refresh-btn.spinning {
+    animation: refresh-spin 1s linear infinite;
+  }
+  @keyframes refresh-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .hira-refresh-status {
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hira-refresh-status.success {
+    background: var(--emerald-bg);
+    color: var(--emerald);
+    border: 1px solid var(--emerald-border);
+  }
+  .hira-refresh-status.info {
+    background: var(--surface-alt);
+    color: var(--text-2);
+    border: 1px solid var(--border);
+  }
+  .hira-refresh-status.error {
+    background: var(--rose-bg);
+    color: var(--rose);
+    border: 1px solid var(--rose-border);
+  }
   .meta-pill {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -778,8 +832,10 @@
       <span class="meta-pill"><span class="dot-both"></span>입원·외래 <strong>563</strong></span>
       <span class="meta-pill"><span class="dot-out"></span>외래만 <strong>712</strong></span>
       <span class="meta-pill"><span class="dot-stop"></span>품절 <strong>5</strong></span>
-      <span class="meta-pill" title="건강보험심사평가원 약제급여목록표 (2026-05-01 기준)">HIRA <strong>13,805</strong> <span class="date-tag">2026년 5월</span></span>
+      <span class="meta-pill" id="hiraPill" title="건강보험심사평가원 약제급여목록표 (2026-05-01 기준)">HIRA <strong>13,805</strong> <span class="date-tag">2026년 5월</span></span>
+      <button type="button" class="hira-refresh-btn" id="hiraRefreshBtn" title="GitHub에서 최신 HIRA 데이터 갱신">↻</button>
     </div>
+    <div class="hira-refresh-status" id="hiraRefreshStatus" hidden></div>
   </header>
 
   <section class="card">
@@ -894,7 +950,7 @@
     <p>본 도구는 의사·약사의 최종 검토를 보조하기 위한 것이며 임상적 판단을 대체하지 않습니다.</p>
     <p>대체약 매칭은 동일 성분·함량 기준이며, 제형(정/캡슐/시럽), 서방형 여부, 부형제 등은 별도 확인이 필요합니다.</p>
     <p class="data-source">한글약명 자동 식별 데이터: 건강보험심사평가원 약제급여목록표 (<strong>2026-05-01 기준</strong>)</p>
-    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v7</strong> · 2026.5.3</p>
+    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v10</strong> · 2026.5.3</p>
   </footer>
 </div>
 
@@ -908,7 +964,141 @@
 // 데이터 로드
 // =====================================================
 const MASTER = JSON.parse(document.getElementById('masterData').textContent);
-const HIRA = JSON.parse(document.getElementById('hiraData').textContent);
+
+// HIRA는 수동 갱신 가능 (let)
+let HIRA = JSON.parse(document.getElementById('hiraData').textContent);
+let HIRA_DATE = '2026-05-01';
+let HIRA_DATE_DISPLAY = '2026년 5월';
+
+// GitHub Pages에 호스팅된 최신 HIRA 데이터 URL
+const HIRA_REMOTE_URL = 'https://biofit-research.github.io/Davos-med-match/data/hira.json';
+const HIRA_META_URL = 'https://biofit-research.github.io/Davos-med-match/data/hira_meta.json';
+
+// 수동 갱신: 사용자가 [↻] 버튼 클릭 시에만 실행 (자동 실행 없음)
+async function manualRefreshHira() {
+  const btn = document.getElementById('hiraRefreshBtn');
+  const status = document.getElementById('hiraRefreshStatus');
+  if (!btn || !status) return;
+  
+  btn.disabled = true;
+  btn.classList.add('spinning');
+  setRefreshStatus('GitHub에서 최신 HIRA 데이터 확인 중...', 'info');
+  
+  try {
+    // 캐시 우회: 매 요청마다 timestamp
+    const cacheBust = '?t=' + Date.now();
+    
+    // 메타데이터 먼저 (작음)
+    const metaRes = await fetch(HIRA_META_URL + cacheBust);
+    if (!metaRes.ok) throw new Error(`메타데이터 ${metaRes.status}`);
+    const meta = await metaRes.json();
+    
+    const remoteDate = meta.date || '';
+    if (!remoteDate) throw new Error('원격 날짜 정보 없음');
+    
+    // 같은 날짜이거나 더 옛날이면 갱신 안 함
+    if (remoteDate <= HIRA_DATE) {
+      setRefreshStatus(
+        `이미 최신 데이터 사용 중 (${HIRA_DATE} 기준, GitHub 동일)`,
+        'info'
+      );
+      autoHideStatus(4000);
+      return;
+    }
+    
+    setRefreshStatus(`새 버전 발견 (${remoteDate}) — 다운로드 중...`, 'info');
+    
+    // 본 데이터 fetch
+    const dataRes = await fetch(HIRA_REMOTE_URL + cacheBust);
+    if (!dataRes.ok) throw new Error(`데이터 ${dataRes.status}`);
+    const data = await dataRes.json();
+    
+    // 검증
+    if (!data || typeof data !== 'object' || Object.keys(data).length < 1000) {
+      throw new Error('데이터 형식 비정상');
+    }
+    
+    // 갱신 적용
+    HIRA = data;
+    HIRA_DATE = remoteDate;
+    HIRA_DATE_DISPLAY = meta.date_display || remoteDate;
+    
+    // 사전 재구축 (fuzzy 매칭용)
+    refreshDictionaryWithNewHira();
+    
+    // 헤더 갱신
+    updateHiraPillDisplay();
+    
+    setRefreshStatus(
+      `✓ HIRA 갱신 완료 — ${Object.keys(HIRA).length.toLocaleString()}개 브랜드 (${remoteDate} 기준)`,
+      'success'
+    );
+    autoHideStatus(6000);
+    
+  } catch (e) {
+    console.warn('[HIRA 수동 갱신 실패]', e);
+    setRefreshStatus(
+      `갱신 실패: ${e.message} — 임베드 데이터(${HIRA_DATE}) 그대로 사용`,
+      'error'
+    );
+    autoHideStatus(6000);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('spinning');
+  }
+}
+
+function setRefreshStatus(text, cls) {
+  const el = document.getElementById('hiraRefreshStatus');
+  if (!el) return;
+  el.className = 'hira-refresh-status ' + cls;
+  el.textContent = text;
+  el.hidden = false;
+}
+
+function autoHideStatus(ms) {
+  setTimeout(() => {
+    const el = document.getElementById('hiraRefreshStatus');
+    if (el) el.hidden = true;
+  }, ms);
+}
+
+function refreshDictionaryWithNewHira() {
+  // DICT_DISPLAY와 DICT_BY_LEN 재구축 (HIRA 갱신 후 fuzzy 매칭 일관성 유지)
+  if (typeof DICT_DISPLAY === 'undefined' || typeof DICT_BY_LEN === 'undefined') return;
+  
+  DICT_DISPLAY.clear();
+  for (const [b, d] of MASTER_DISPLAY) DICT_DISPLAY.set(b, d);
+  for (const k in HIRA) {
+    if (k.length >= 2 && !DICT_DISPLAY.has(k)) {
+      DICT_DISPLAY.set(k, HIRA[k][0].b);
+    }
+  }
+  for (const k in DICT_BY_LEN) delete DICT_BY_LEN[k];
+  for (const k of DICT_DISPLAY.keys()) {
+    const L = k.length;
+    if (!DICT_BY_LEN[L]) DICT_BY_LEN[L] = [];
+    DICT_BY_LEN[L].push(k);
+  }
+}
+
+function updateHiraPillDisplay() {
+  const pill = document.getElementById('hiraPill');
+  if (!pill) return;
+  const brands = Object.keys(HIRA).length.toLocaleString();
+  pill.innerHTML = `HIRA <strong>${brands}</strong> <span class="date-tag">${HIRA_DATE_DISPLAY}</span>`;
+  pill.title = `건강보험심사평가원 약제급여목록표 (${HIRA_DATE} 기준 · GitHub 갱신본)`;
+  
+  // 푸터 데이터 출처도 갱신
+  const ds = document.querySelector('.data-source strong');
+  if (ds) ds.textContent = `${HIRA_DATE} 기준`;
+}
+
+// 갱신 버튼 이벤트 바인딩 (DOMContentLoaded 시점)
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('hiraRefreshBtn');
+  if (btn) btn.addEventListener('click', manualRefreshHira);
+});
 
 // =====================================================
 // 헬퍼
