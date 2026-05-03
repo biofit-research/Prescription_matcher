@@ -832,7 +832,7 @@
       <span class="meta-pill"><span class="dot-both"></span>입원·외래 <strong>563</strong></span>
       <span class="meta-pill"><span class="dot-out"></span>외래만 <strong>712</strong></span>
       <span class="meta-pill"><span class="dot-stop"></span>품절 <strong>5</strong></span>
-      <span class="meta-pill" id="hiraPill" title="건강보험심사평가원 약제급여목록표 (2026-05-01 기준)">HIRA <strong>13,805</strong> <span class="date-tag">2026년 5월</span></span>
+      <span class="meta-pill" id="hiraPill" title="건강보험심사평가원 약제급여목록표 (2026-05-01 기준)">HIRA · 심평원 등록 약품 <strong>13,805</strong>개 매칭 <span class="date-tag">(2026.5)</span></span>
       <button type="button" class="hira-refresh-btn" id="hiraRefreshBtn" title="GitHub에서 최신 HIRA 데이터 갱신">↻</button>
     </div>
     <div class="hira-refresh-status" id="hiraRefreshStatus" hidden></div>
@@ -950,7 +950,7 @@
     <p>본 도구는 의사·약사의 최종 검토를 보조하기 위한 것이며 임상적 판단을 대체하지 않습니다.</p>
     <p>대체약 매칭은 동일 성분·함량 기준이며, 제형(정/캡슐/시럽), 서방형 여부, 부형제 등은 별도 확인이 필요합니다.</p>
     <p class="data-source">한글약명 자동 식별 데이터: 건강보험심사평가원 약제급여목록표 (<strong>2026-05-01 기준</strong>)</p>
-    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v10</strong> · 2026.5.3</p>
+    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v11</strong> · 2026.5.3</p>
   </footer>
 </div>
 
@@ -968,7 +968,7 @@ const MASTER = JSON.parse(document.getElementById('masterData').textContent);
 // HIRA는 수동 갱신 가능 (let)
 let HIRA = JSON.parse(document.getElementById('hiraData').textContent);
 let HIRA_DATE = '2026-05-01';
-let HIRA_DATE_DISPLAY = '2026년 5월';
+let HIRA_DATE_DISPLAY = '2026.5';
 
 // GitHub Pages에 호스팅된 최신 HIRA 데이터 URL
 const HIRA_REMOTE_URL = 'https://biofit-research.github.io/Davos-med-match/data/hira.json';
@@ -1086,7 +1086,7 @@ function updateHiraPillDisplay() {
   const pill = document.getElementById('hiraPill');
   if (!pill) return;
   const brands = Object.keys(HIRA).length.toLocaleString();
-  pill.innerHTML = `HIRA <strong>${brands}</strong> <span class="date-tag">${HIRA_DATE_DISPLAY}</span>`;
+  pill.innerHTML = `HIRA · 심평원 등록 약품 <strong>${brands}</strong>개 매칭 <span class="date-tag">(${HIRA_DATE_DISPLAY})</span>`;
   pill.title = `건강보험심사평가원 약제급여목록표 (${HIRA_DATE} 기준 · GitHub 갱신본)`;
   
   // 푸터 데이터 출처도 갱신
