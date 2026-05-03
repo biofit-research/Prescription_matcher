@@ -528,6 +528,7 @@
   }
   .arrow { color: var(--text-3); font-size: 0.875rem; }
   .match-name { font-weight: 500; }
+  .match-name + .rx-badge { margin-left: 6px; }
   .match-meta { font-size: 0.8125rem; color: var(--text-2); }
   .match-stock {
     font-size: 0.6875rem;
@@ -548,6 +549,41 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
+  .drug-info-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 8px;
+    font-size: 0.6875rem;
+    border-radius: 4px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-2);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .drug-info-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-soft);
+  }
+  .info-btn-group {
+    display: inline-flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .search-item-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .search-item-row .name { flex: 1; min-width: 0; }
+  .search-spacer { flex: 1; }
   .rx-badge.rx-both { background: var(--emerald-bg); color: var(--emerald); border-color: var(--emerald-border); }
   .rx-badge.rx-out-only { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-border); }
   .rx-badge.rx-stopped { background: var(--rose-bg); color: var(--rose); border-color: var(--rose-border); }
@@ -705,6 +741,17 @@
     font-size: 0.8125rem;
     margin-top: 8px;
   }
+  footer p.version-info {
+    font-weight: 400;
+    color: var(--text-3);
+    font-size: 0.75rem;
+    margin-top: 4px;
+    opacity: 0.8;
+  }
+  footer p.version-info strong {
+    font-weight: 500;
+    color: var(--text-2);
+  }
   footer a { color: var(--text-2); text-decoration: underline; text-underline-offset: 2px; }
 
   @media (max-width: 600px) {
@@ -723,7 +770,7 @@
       <div class="logo">℞</div>
       <div>
         <h1>다보스병원 처방약 매칭 도우미</h1>
-        <div class="subtitle">by 심장내과</div>
+        <div class="subtitle">by 심장내과 · 2026.5.3 업데이트</div>
       </div>
     </div>
     <div class="meta-row">
@@ -847,6 +894,7 @@
     <p>본 도구는 의사·약사의 최종 검토를 보조하기 위한 것이며 임상적 판단을 대체하지 않습니다.</p>
     <p>대체약 매칭은 동일 성분·함량 기준이며, 제형(정/캡슐/시럽), 서방형 여부, 부형제 등은 별도 확인이 필요합니다.</p>
     <p class="data-source">한글약명 자동 식별 데이터: 건강보험심사평가원 약제급여목록표 (<strong>2026-05-01 기준</strong>)</p>
+    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v6</strong> · 2026.5.3</p>
   </footer>
 </div>
 
@@ -1301,20 +1349,35 @@ const STATUS_INFO = {
   none: { icon: '✕', label: '처방 불가', cls: 'none' },
 };
 
+// 약품 정보 검색 URL — 구글 검색
+// (식약처 의약품안전나라 직접링크는 검색 페이지 구조 변경으로 안정적이지 않아 구글 검색으로 통일)
+function drugInfoUrl(drugName) {
+  if (!drugName) return null;
+  const cleanName = String(drugName).replace(/[\[\(].*$/, '').trim();
+  // 약학정보원·식약처 등 신뢰할 수 있는 출처가 상위 노출되도록 키워드 추가
+  return 'https://www.google.com/search?q=' + encodeURIComponent(cleanName + ' 효능 용법 주의사항');
+}
+
 function renderMatchRow(m, isOtherDose = false) {
   const isCombo = m.g && m.g.length > 1;
   const comboBadge = isCombo ? '<span class="combo-tag">복합</span>' : '';
   const doseWarn = isOtherDose ? '<span class="dose-warn">다른 함량</span>' : '';
   const rx = rxInfo(m.s);
+  const url = drugInfoUrl(m.d);
+  const infoBtn = url
+    ? `<a href="${url}" target="_blank" rel="noopener" class="drug-info-btn" title="구글에서 효능·용법·주의사항 검색">구글 ↗</a>`
+    : '';
   return `
     <div class="match-row">
       <span class="arrow">→</span>
       <div style="flex:1;min-width:0;">
-        <span class="match-name">${escapeHtml(m.d)}</span>${comboBadge}${doseWarn}
+        <span class="match-name">${escapeHtml(m.d)}</span>
+        <span class="rx-badge ${rx.cls}">${rx.label}</span>
+        ${comboBadge}${doseWarn}
         <span class="match-meta">· ${escapeHtml(m.i || '-')}</span>
         ${m.m ? `<span class="match-meta">· ${escapeHtml(m.m)}</span>` : ''}
       </div>
-      <span class="rx-badge ${rx.cls}">${rx.label}</span>
+      ${infoBtn}
     </div>
   `;
 }
@@ -1465,9 +1528,11 @@ function runSearch(query) {
     const rx = rxInfo(m.s);
     return `
     <div class="item">
-      <div>
+      <div class="search-item-row">
         <span class="name">${escapeHtml(m.d)}</span>
-        <span class="rx-badge ${rx.cls}" style="margin-left:6px;">${rx.label}</span>
+        <span class="rx-badge ${rx.cls}">${rx.label}</span>
+        <span class="search-spacer"></span>
+        <a href="${drugInfoUrl(m.d)}" target="_blank" rel="noopener" class="drug-info-btn" title="구글에서 효능·용법·주의사항 검색">구글 ↗</a>
       </div>
       <div class="ing">${escapeHtml(m.i)} · ${escapeHtml(m.m)}</div>
     </div>
