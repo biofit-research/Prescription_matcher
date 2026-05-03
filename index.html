@@ -894,7 +894,7 @@
     <p>본 도구는 의사·약사의 최종 검토를 보조하기 위한 것이며 임상적 판단을 대체하지 않습니다.</p>
     <p>대체약 매칭은 동일 성분·함량 기준이며, 제형(정/캡슐/시럽), 서방형 여부, 부형제 등은 별도 확인이 필요합니다.</p>
     <p class="data-source">한글약명 자동 식별 데이터: 건강보험심사평가원 약제급여목록표 (<strong>2026-05-01 기준</strong>)</p>
-    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v6</strong> · 2026.5.3</p>
+    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v7</strong> · 2026.5.3</p>
   </footer>
 </div>
 
@@ -1365,7 +1365,7 @@ function renderMatchRow(m, isOtherDose = false) {
   const rx = rxInfo(m.s);
   const url = drugInfoUrl(m.d);
   const infoBtn = url
-    ? `<a href="${url}" target="_blank" rel="noopener" class="drug-info-btn" title="구글에서 효능·용법·주의사항 검색">구글 ↗</a>`
+    ? `<a href="${url}" target="_blank" rel="noopener" class="drug-info-btn" title="구글에서 효능·용법·주의사항 검색">용법·효능 ↗</a>`
     : '';
   return `
     <div class="match-row">
@@ -1532,7 +1532,7 @@ function runSearch(query) {
         <span class="name">${escapeHtml(m.d)}</span>
         <span class="rx-badge ${rx.cls}">${rx.label}</span>
         <span class="search-spacer"></span>
-        <a href="${drugInfoUrl(m.d)}" target="_blank" rel="noopener" class="drug-info-btn" title="구글에서 효능·용법·주의사항 검색">구글 ↗</a>
+        <a href="${drugInfoUrl(m.d)}" target="_blank" rel="noopener" class="drug-info-btn" title="구글에서 효능·용법·주의사항 검색">용법·효능 ↗</a>
       </div>
       <div class="ing">${escapeHtml(m.i)} · ${escapeHtml(m.m)}</div>
     </div>
