@@ -283,37 +283,30 @@
   }
   @keyframes ocr-spin { to { transform: rotate(360deg); } }
 
-  /* OCR phone tip */
-  .ocr-tip {
-    margin-top: 8px;
-    padding: 8px 12px;
-    font-size: 0.8125rem;
-    color: var(--text-2);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+  /* OCR 경고 (사진 박스 안) */
+  .ocr-warn {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--rose);
+    font-weight: 500;
   }
-  .link-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-    color: var(--primary);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    cursor: pointer;
-    font-size: inherit;
-    font-family: inherit;
-  }
-  .link-btn:hover { color: var(--primary-hover); }
-  .phone-tip {
-    margin-top: 4px;
+
+  /* 더 정확한 방법 박스 (사진 박스 아래) */
+  .ocr-better {
+    margin-top: 10px;
     padding: 12px 14px;
-    background: var(--surface-alt);
+    background: var(--primary-soft);
+    border: 1px solid var(--emerald-border);
     border-radius: 8px;
     font-size: 0.8125rem;
     color: var(--text-2);
+  }
+  .ocr-better-title {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.875rem;
+    margin-bottom: 8px;
+    line-height: 1.5;
   }
   .phone-tip-row {
     display: flex;
@@ -331,9 +324,9 @@
     font-weight: 500;
     color: var(--text);
     flex-shrink: 0;
-    min-width: 130px;
+    min-width: 80px;
   }
-  .phone-tip code {
+  .phone-tip-row code {
     background: white;
     padding: 1px 6px;
     border-radius: 4px;
@@ -341,14 +334,19 @@
     border: 1px solid var(--border);
     font-family: 'SF Mono', Monaco, Consolas, monospace;
   }
-  .phone-tip-note {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid var(--border);
-    font-size: 0.75rem;
-    color: var(--text-3);
-    font-style: italic;
+  .link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
   }
+  .link-btn:hover { color: var(--primary-hover); }
 
   /* Fuzzy correction info */
   .fuzzy-info {
@@ -871,23 +869,20 @@
       <div class="ocr-drop" id="ocrDrop">
         <input type="file" id="ocrFile" accept="image/*" capture="environment" hidden>
         <div class="ocr-icon">📷</div>
-        <div class="ocr-title">처방전·메모 사진으로 입력</div>
-        <div class="ocr-hint">클릭/드래그/카메라 촬영 · 자동 한글 OCR + 사전 보정</div>
+        <div class="ocr-title">처방전 사진 자동 인식</div>
+        <div class="ocr-hint">인쇄된 텍스트만 인식 (정확도 65~85%)</div>
+        <div class="ocr-warn">⚠ 약 봉지·알약·손글씨 사진은 부정확합니다</div>
       </div>
-      <div class="ocr-tip">
-        💡 <strong>더 정확한 방법</strong>: 폰의 텍스트 인식 후 붙여넣기
-        <button type="button" class="link-btn" id="phoneTipBtn">자세히</button>
-      </div>
-      <div class="phone-tip" id="phoneTip" hidden>
+      <div class="ocr-better">
+        <div class="ocr-better-title">💡 더 정확한 방법: 폰 텍스트 인식 후 붙여넣기 (95%+ 정확)</div>
         <div class="phone-tip-row">
-          <span class="phone-tip-label">📱 iPhone (iOS 15+)</span>
-          <span>사진 앱 → 처방전 텍스트를 길게 누르기 → <code>복사</code> → 입력란에 <code>⌘V</code> 붙여넣기</span>
+          <span class="phone-tip-label">📱 iPhone</span>
+          <span>사진 앱 → 텍스트 길게 누르기 → <code>복사</code> → 아래 입력란에 <code>⌘V</code></span>
         </div>
         <div class="phone-tip-row">
           <span class="phone-tip-label">📱 Android</span>
-          <span>Google Lens 또는 빅스비 비전으로 텍스트 인식 → <code>복사</code> → 입력란에 붙여넣기</span>
+          <span>Google Lens / 빅스비 비전 → 텍스트 추출 → 아래 입력란에 붙여넣기</span>
         </div>
-        <div class="phone-tip-note">폰 OCR은 한국어 인쇄 텍스트 정확도 95%+ — Tesseract보다 훨씬 정확합니다.</div>
       </div>
       <div class="ocr-status" id="ocrStatus" hidden></div>
 
@@ -950,7 +945,7 @@
     <p>본 도구는 의사·약사의 최종 검토를 보조하기 위한 것이며 임상적 판단을 대체하지 않습니다.</p>
     <p>대체약 매칭은 동일 성분·함량 기준이며, 제형(정/캡슐/시럽), 서방형 여부, 부형제 등은 별도 확인이 필요합니다.</p>
     <p class="data-source">한글약명 자동 식별 데이터: 건강보험심사평가원 약제급여목록표 (<strong>2026-05-01 기준</strong>)</p>
-    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v11</strong> · 2026.5.3</p>
+    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v12</strong> · 2026.5.3</p>
   </footer>
 </div>
 
@@ -1765,11 +1760,6 @@ document.getElementById('sampleBtn').addEventListener('click', () => {
 document.getElementById('helpBtn').addEventListener('click', () => {
   const help = document.getElementById('formatHelp');
   help.hidden = !help.hidden;
-});
-
-document.getElementById('phoneTipBtn').addEventListener('click', () => {
-  const tip = document.getElementById('phoneTip');
-  tip.hidden = !tip.hidden;
 });
 
 let searchTimer = null;
