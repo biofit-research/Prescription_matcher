@@ -372,6 +372,78 @@
     flex-shrink: 0;
   }
 
+  /* Changelog card */
+  .step.changelog {
+    background: var(--surface-alt);
+    color: var(--text-2);
+    font-size: 1rem;
+  }
+  .changelog-entry {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .changelog-entry:last-of-type { border-bottom: none; }
+  .changelog-entry-header {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .changelog-entry-version {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.9375rem;
+  }
+  .changelog-entry-version.latest {
+    background: #DBEAFE;
+    color: #1E40AF;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+  }
+  .changelog-entry-date {
+    color: var(--text-3);
+    font-size: 0.75rem;
+  }
+  .changelog-entry-latest-tag {
+    display: inline-block;
+    font-size: 0.6875rem;
+    padding: 1px 6px;
+    background: #2563EB;
+    color: white;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .changelog-entry ul {
+    margin: 0 0 0 18px;
+    padding: 0;
+  }
+  .changelog-entry li {
+    margin-bottom: 3px;
+    line-height: 1.55;
+    color: var(--text-2);
+    font-size: 0.875rem;
+  }
+  .changelog-toggle-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 8px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    color: var(--text-2);
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .changelog-toggle-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-soft);
+  }
+
   /* Pill ID external link section */
   .pill-id-section {
     margin-top: 12px;
@@ -447,9 +519,6 @@
     right: 12px;
     font-size: 0.9375rem;
     opacity: 0.7;
-  }
-  @media (max-width: 480px) {
-    .pill-id-btn { min-width: 100%; }
   }
 
   /* Textarea */
@@ -559,6 +628,17 @@
   }
   .result-input-meta {
     font-size: 0.8125rem; color: var(--text-2);
+  }
+  .sig-tag {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 0.6875rem;
+    border-radius: 4px;
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FDE68A;
+    font-weight: 500;
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
   }
   .badge {
     font-size: 0.6875rem;
@@ -806,12 +886,103 @@
   }
   footer a { color: var(--text-2); text-decoration: underline; text-underline-offset: 2px; }
 
-  @media (max-width: 600px) {
-    .container { padding: 24px 16px 60px; }
-    h1 { font-size: 1.25rem; }
-    .card { padding: 18px; }
-    .stats { grid-template-columns: 1fr; }
-    .meta-row { font-size: 0.8125rem; }
+  /* ============================================
+     모바일·태블릿 반응형 (iPhone/Android 최적화)
+     ============================================ */
+
+  /* 태블릿/소형 데스크톱 (≤ 768px) */
+  @media (max-width: 768px) {
+    .container { padding: 20px 14px 60px; }
+
+    /* iOS Safari 자동 줌인 방지 — input/textarea를 16px 이상으로 */
+    textarea, input[type="text"], input[type="search"], input[type="email"] {
+      font-size: 16px !important;
+    }
+
+    /* 헤더 — 모바일에서 폰트와 간격 조정 */
+    h1 { font-size: 1.3125rem; }
+    .subtitle { font-size: 0.8125rem; }
+    .meta-row { gap: 8px; font-size: 0.8125rem; }
+    .meta-pill { padding: 5px 9px; }
+
+    /* HIRA 갱신 버튼 — 터치 타겟 키움 */
+    .hira-refresh-btn {
+      width: 36px; height: 36px;
+      font-size: 1rem;
+    }
+
+    /* 카드 — 패딩 축소 */
+    .card { padding: 16px; }
+    .section-header { gap: 8px; margin-bottom: 12px; }
+    h2 { font-size: 1rem; }
+    .step { width: 22px; height: 22px; font-size: 0.75rem; }
+
+    /* OCR 영역 */
+    .ocr-drop { padding: 22px 14px; }
+    .ocr-icon { font-size: 26px; }
+    .ocr-title { font-size: 0.9375rem; }
+
+    /* 더 정확한 방법 박스 — 모바일에서 row가 column으로 */
+    .phone-tip-row { flex-direction: column; gap: 4px; }
+    .phone-tip-label { min-width: 0; font-size: 0.875rem; }
+
+    /* 매칭 결과 — 약 이름·버튼이 좁은 화면에서 wrap */
+    .match-row {
+      flex-wrap: wrap;
+      gap: 6px 8px;
+    }
+    .match-row > div { min-width: 0; flex-basis: calc(100% - 90px); }
+    .drug-info-btn { 
+      padding: 5px 10px; 
+      font-size: 0.75rem; 
+      min-height: 28px;
+    }
+    .rx-badge { padding: 3px 9px; font-size: 0.6875rem; }
+
+    /* 결과 입력 row */
+    .result-input-row { gap: 6px; flex-wrap: wrap; }
+    .sig-tag { font-size: 0.6875rem; }
+
+    /* 약 모양 식별 카드 */
+    .pill-id-btn { min-width: 100%; }
+
+    /* 변경 내역 카드 */
+    .changelog-entry { padding: 8px 0; }
+    .changelog-entry li { font-size: 0.8125rem; }
+
+    /* 푸터 */
+    footer { font-size: 0.75rem; padding: 16px 0; }
+
+    /* 매칭/지우기 버튼 — 터치 친화 크기 */
+    button[type="button"], .btn-primary, .btn-secondary {
+      min-height: 36px;
+    }
+  }
+
+  /* 소형 모바일 (≤ 480px) */
+  @media (max-width: 480px) {
+    .container { padding: 16px 10px 50px; }
+    h1 { font-size: 1.1875rem; }
+
+    /* 헤더 통계 — 더 작게 */
+    .meta-row { gap: 6px; }
+    .meta-pill { padding: 4px 8px; font-size: 0.75rem; }
+
+    /* 카드 패딩 축소 */
+    .card { padding: 14px; }
+
+    /* 매칭 결과 — 정보 row 더 컴팩트 */
+    .match-row {
+      padding: 8px 10px;
+    }
+    .match-meta { font-size: 0.75rem; }
+
+    /* OCR 영역 */
+    .ocr-drop { padding: 18px 12px; }
+
+    /* 변경 내역 entry header */
+    .changelog-entry-header { gap: 6px; }
+    .changelog-entry-version { font-size: 0.875rem; }
   }
 </style>
 </head>
@@ -822,7 +993,7 @@
       <div class="logo">℞</div>
       <div>
         <h1>다보스병원 처방약 매칭 도우미</h1>
-        <div class="subtitle">by 심장내과 · 2026.5.3 업데이트</div>
+        <div class="subtitle">by 심장내과 · 2026.5.13 업데이트</div>
       </div>
     </div>
     <div class="meta-row">
@@ -853,9 +1024,14 @@
 듀로제식디트랜스 25mcg/h
 텔로듀오 80/5mg
 
+# 용법(0.5T qd, 1정 bid 등)이 붙어 있어도 자동 분리됨
+노바스크 5mg 1T qd
+센리카 75mg 1C bid prn
+
 # 정확한 매칭이 필요하면 성분 직접 입력
 자나팜정 0.25mg | alprazolam | 0.25mg</pre>
       <ul>
+        <li><strong>용법 자동 분리</strong>: 1T/1정/1캡슐/qd/bid/tid/qhs/prn/식전·식후/#30일 등 처방 용법 표기가 붙어 있어도 자동 제거됨. 처방전 그대로 복사·붙여넣기 가능.</li>
         <li><strong>한글명 자동 매핑</strong>: HIRA 약제급여목록 13,946개 브랜드의 성분을 자동으로 lookup. 사용자는 한글 약 이름만 입력해도 됩니다.</li>
         <li><strong>제형 무시</strong>: 정/캡슐/시럽/패치 등 제형 명사는 자동 인식 (올멕정 = 올멕 = 올멕 20mg)</li>
         <li><strong>함량 단위 자동 변환</strong>: 0.25mg ↔ 250㎍, 0.1g ↔ 100mg 동일 처리</li>
@@ -941,11 +1117,20 @@
     </div>
   </section>
 
+  <section class="card" id="changelogCard">
+    <div class="section-header">
+      <span class="step changelog">📋</span>
+      <h2>변경 내역</h2>
+    </div>
+    <div id="changelogList"></div>
+    <button type="button" class="changelog-toggle-btn" id="changelogToggleBtn">전체 변경 내역 보기 ▼</button>
+  </section>
+
   <footer>
     <p>본 도구는 의사·약사의 최종 검토를 보조하기 위한 것이며 임상적 판단을 대체하지 않습니다.</p>
     <p>대체약 매칭은 동일 성분·함량 기준이며, 제형(정/캡슐/시럽), 서방형 여부, 부형제 등은 별도 확인이 필요합니다.</p>
     <p class="data-source">한글약명 자동 식별 데이터: 건강보험심사평가원 약제급여목록표 (<strong>2026-05-01 기준</strong>)</p>
-    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v12</strong> · 2026.5.3</p>
+    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v17</strong> · 2026.5.13</p>
   </footer>
 </div>
 
@@ -1089,11 +1274,11 @@ function updateHiraPillDisplay() {
   if (ds) ds.textContent = `${HIRA_DATE} 기준`;
 }
 
-// 갱신 버튼 이벤트 바인딩 (DOMContentLoaded 시점)
-document.addEventListener('DOMContentLoaded', () => {
+// 갱신 버튼 이벤트 바인딩 (스크립트가 body 끝에 있어 즉시 실행 가능)
+(function initHiraRefresh() {
   const btn = document.getElementById('hiraRefreshBtn');
   if (btn) btn.addEventListener('click', manualRefreshHira);
-});
+})();
 
 // =====================================================
 // 헬퍼
@@ -1156,15 +1341,57 @@ function extractDoseFromName(name) {
   return m ? m[1] : '';
 }
 
+// 처방 용법(sig) 시작 패턴 — 이 패턴이 나오면 그 뒤를 모두 용법으로 간주
+// 약 이름·함량과 복용법을 자동 분리하기 위함
+// 예: "노바스크 5mg 1T qd" → 약 이름·함량: "노바스크 5mg", 용법: "1T qd"
+const SIG_START_RE = new RegExp(
+  '\\s+(?:' +
+  // 복용량 + 단위 (함량 mg와 구분되도록 T/정/캡슐 등 처방 단위만)
+  '\\d+(?:\\.\\d+)?\\s*(?:T(?![a-zA-Z])|t(?![a-zA-Z])|tab|tabs|정|C(?![a-zA-Z])|cap|caps|캡슐|캡|포|pkg|amp|vial|gtt)' +
+  // 영문 sig 약어
+  '|q\\.?d\\.?(?![a-zA-Z])|b\\.?i\\.?d\\.?(?![a-zA-Z])|t\\.?i\\.?d\\.?(?![a-zA-Z])|q\\.?i\\.?d\\.?(?![a-zA-Z])' +
+  '|qhs(?![a-zA-Z])|qod(?![a-zA-Z])|qam(?![a-zA-Z])|qpm(?![a-zA-Z])|prn(?![a-zA-Z])|p\\.r\\.n\\.?' +
+  '|ac(?![a-zA-Z])|pc(?![a-zA-Z])|po(?![a-zA-Z])|hs(?![a-zA-Z])' +
+  '|q\\d+h(?![a-zA-Z])' +
+  // 한글 sig
+  '|식전|식후|취침전|아침|점심|저녁|1일\\s*\\d+회|하루\\s*\\d+회' +
+  // 기간 표기
+  '|[#x×]\\s*\\d+\\s*(?:days?|일|d)?' +
+  ')',
+  'i'
+);
+
+function stripSig(line) {
+  // 용법 부분을 제거하고 약 이름·함량만 반환, 용법은 sig에 저장
+  const m = line.match(SIG_START_RE);
+  if (m && m.index > 0) {
+    return { name: line.slice(0, m.index).trim(), sig: line.slice(m.index).trim() };
+  }
+  return { name: line, sig: '' };
+}
+
 function parseInputLine(line) {
   const trimmed = line.trim();
   if (!trimmed) return null;
+  // 파이프 구분이면 사용자가 명시적으로 입력한 경우
   const parts = trimmed.split(/\s*[\|]\s*/);
+  if (parts.length > 1) {
+    return {
+      raw: trimmed,
+      name: (parts[0] || '').trim(),
+      ingredient: (parts[1] || '').trim(),
+      dose: (parts[2] || '').trim(),
+      sig: '',
+    };
+  }
+  // 단일 라인 — 용법 자동 분리
+  const { name, sig } = stripSig(trimmed);
   return {
     raw: trimmed,
-    name: (parts[0] || '').trim(),
-    ingredient: (parts[1] || '').trim(),
-    dose: (parts[2] || '').trim(),
+    name,
+    ingredient: '',
+    dose: '',
+    sig,
   };
 }
 
@@ -1590,6 +1817,7 @@ function renderResult(r) {
           ${r.inputIng || r.inputDose
             ? `<span class="result-input-meta">${escapeHtml(r.inputIng)}${r.inputDose ? ' · ' + escapeHtml(r.inputDose) : ''}</span>`
             : ''}
+          ${r.input.sig ? `<span class="sig-tag" title="복용 용법">${escapeHtml(r.input.sig)}</span>` : ''}
           <span class="badge ${info.cls}">${info.label}${partialNote}</span>
         </div>
   `;
@@ -1927,6 +2155,116 @@ window.addEventListener('paste', (e) => {
     }
   }
 });
+
+// =====================================================
+// 변경 내역 카드 (페이지 하단)
+// =====================================================
+const CHANGELOG = [
+  {
+    version: 'v17',
+    date: '2026.5.13',
+    changes: [
+      '모바일·태블릿 반응형 개선 — iPhone Safari, Android Chrome 최적화',
+      'iOS Safari 자동 줌인 방지 (textarea·검색창 입력 시 화면 확대 안 됨)',
+      '터치 친화 버튼 크기 — HIRA 갱신·용법 검색 버튼 등 큰 터치 영역',
+      '모바일에서 폰트 크기·여백 단계별 조정으로 가독성 향상',
+    ],
+  },
+  {
+    version: 'v16',
+    date: '2026.5.13',
+    changes: [
+      '업데이트 알림 배너 → 페이지 하단 변경 내역 카드로 변경 (배너 표시 문제 해결)',
+    ],
+  },
+  {
+    version: 'v13',
+    date: '2026.5.13',
+    changes: [
+      '처방 용법(1T qd, bid, 식후 등) 자동 분리 — 처방전 그대로 복사·붙여넣기 가능',
+      '매칭 결과에 분리된 용법을 노란 태그로 표시',
+    ],
+  },
+  {
+    version: 'v12',
+    date: '2026.5.3',
+    changes: [
+      'OCR 영역 안내 개선 — 사진 OCR 한계와 폰 OCR 대안을 한눈에 표시 (약 봉지·알약 사진은 부정확함을 명시)',
+    ],
+  },
+  {
+    version: 'v11',
+    date: '2026.5.3',
+    changes: [
+      'HIRA 표시를 "심평원 등록 약품 X개 매칭"으로 변경 — 출처 신뢰성 강화',
+    ],
+  },
+  {
+    version: 'v10',
+    date: '2026.5.3',
+    changes: [
+      'HIRA 수동 갱신 버튼 [↻] 추가 — GitHub에서 최신 HIRA 데이터 받아오기',
+    ],
+  },
+  {
+    version: 'v7',
+    date: '2026.5.3',
+    changes: [
+      '매칭 결과 각 약 옆에 [용법·효능 ↗] 구글 검색 링크 추가',
+      '입원·외래/외래만/품절 배지를 약 이름 옆으로 이동 (가독성 개선)',
+    ],
+  },
+  {
+    version: 'v6 이전',
+    date: '~ 2026.4',
+    changes: [
+      '기본 매칭 기능 (본원 보유·동일 성분 대체약·복합제 분석)',
+      'HIRA 13,805개 브랜드 한글약명 → 영문 성분 자동 매핑',
+      'Tesseract.js OCR + Fuzzy 오타 보정 + 약 모양 외부 검색',
+    ],
+  },
+];
+
+let changelogExpanded = false;
+
+function renderChangelog() {
+  const list = document.getElementById('changelogList');
+  if (!list) return;
+  
+  const items = changelogExpanded ? CHANGELOG : CHANGELOG.slice(0, 3);
+  
+  list.innerHTML = items.map((v, idx) => `
+    <div class="changelog-entry">
+      <div class="changelog-entry-header">
+        <span class="changelog-entry-version">${escapeHtml(v.version)}</span>
+        ${idx === 0 ? '<span class="changelog-entry-latest-tag">최신</span>' : ''}
+        <span class="changelog-entry-date">${escapeHtml(v.date)}</span>
+      </div>
+      <ul>${v.changes.map(c => `<li>${escapeHtml(c)}</li>`).join('')}</ul>
+    </div>
+  `).join('');
+  
+  const btn = document.getElementById('changelogToggleBtn');
+  if (btn) {
+    if (CHANGELOG.length <= 3) {
+      btn.hidden = true;
+    } else {
+      btn.textContent = changelogExpanded
+        ? '간단히 보기 ▲'
+        : `전체 변경 내역 보기 (${CHANGELOG.length - 3}개 더) ▼`;
+    }
+  }
+}
+
+// 즉시 실행 — DOM이 이미 준비된 상태 (스크립트가 body 끝)
+(function initChangelog() {
+  renderChangelog();
+  const btn = document.getElementById('changelogToggleBtn');
+  if (btn) btn.addEventListener('click', () => {
+    changelogExpanded = !changelogExpanded;
+    renderChangelog();
+  });
+})();
 
 console.log(`[처방약 매칭 도우미] 본원 약품 ${MASTER.length}개 로드 완료`);
 </script>
