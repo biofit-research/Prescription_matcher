@@ -2366,9 +2366,5 @@ setTimeout(trackVisitor, 500);
 
 console.log(`[처방약 매칭 도우미] 본원 약품 ${MASTER.length}개 로드 완료`);
 </script>
-<script>
-  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-</script>
-<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
