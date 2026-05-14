@@ -884,6 +884,15 @@
     font-weight: 500;
     color: var(--text-2);
   }
+  .visitor-count {
+    display: inline-block;
+    margin-left: 4px;
+    color: var(--text-3);
+  }
+  .visitor-count strong {
+    color: var(--text-2);
+    font-weight: 500;
+  }
   footer a { color: var(--text-2); text-decoration: underline; text-underline-offset: 2px; }
 
   /* ============================================
@@ -1130,7 +1139,12 @@
     <p>본 도구는 의사·약사의 최종 검토를 보조하기 위한 것이며 임상적 판단을 대체하지 않습니다.</p>
     <p>대체약 매칭은 동일 성분·함량 기준이며, 제형(정/캡슐/시럽), 서방형 여부, 부형제 등은 별도 확인이 필요합니다.</p>
     <p class="data-source">한글약명 자동 식별 데이터: 건강보험심사평가원 약제급여목록표 (<strong>2026-05-01 기준</strong>)</p>
-    <p class="version-info">다보스병원 처방약 매칭 도우미 <strong>v17</strong> · 2026.5.13</p>
+    <p class="version-info">
+      다보스병원 처방약 매칭 도우미 <strong>v18</strong> · 2026.5.13
+      <span class="visitor-count" id="visitorCount" hidden>
+        · 오늘 <strong id="visitorToday">-</strong> · 누적 <strong id="visitorTotal">-</strong>
+      </span>
+    </p>
   </footer>
 </div>
 
@@ -2161,6 +2175,14 @@ window.addEventListener('paste', (e) => {
 // =====================================================
 const CHANGELOG = [
   {
+    version: 'v18',
+    date: '2026.5.13',
+    changes: [
+      '방문자 카운트 추가 — 푸터에 오늘·누적 방문 수 표시',
+      '익명 카운트만 (CountAPI) · 환자 정보 등 어떤 사용 데이터도 외부 전송 없음',
+    ],
+  },
+  {
     version: 'v17',
     date: '2026.5.13',
     changes: [
@@ -2265,6 +2287,73 @@ function renderChangelog() {
     renderChangelog();
   });
 })();
+
+// =====================================================
+// 방문자 카운트 (CountAPI 사용 — 익명, 환자 정보 전송 0)
+// =====================================================
+const COUNT_API_BASE = 'https://countapi.mileshilliard.com/api/v1';
+const COUNTER_SEED = 'efba76591021';  // 키 추측 방지용 랜덤 시드
+const TOTAL_KEY = `davos_matcher_${COUNTER_SEED}_total`;
+const LS_LAST_VISIT = 'pmatcher_last_visit_date';
+
+function todayKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `davos_matcher_${COUNTER_SEED}_${y}_${m}_${day}`;
+}
+
+function todayDateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+async function trackVisitor() {
+  let lastVisit = '';
+  try { lastVisit = localStorage.getItem(LS_LAST_VISIT) || ''; } catch (e) {}
+  
+  const today = todayDateStr();
+  const isFirstVisitToday = lastVisit !== today;
+  const todayK = todayKey();
+  
+  const endpoint = isFirstVisitToday ? 'hit' : 'get';
+  
+  try {
+    // 두 카운터 병렬 호출 (성공·실패 독립)
+    const [totalRes, todayRes] = await Promise.allSettled([
+      fetch(`${COUNT_API_BASE}/${endpoint}/${TOTAL_KEY}`).then(r => r.ok ? r.json() : null),
+      fetch(`${COUNT_API_BASE}/${endpoint}/${todayK}`).then(r => r.ok ? r.json() : null),
+    ]);
+    
+    let totalVal = null, todayVal = null;
+    if (totalRes.status === 'fulfilled' && totalRes.value) totalVal = totalRes.value.value;
+    if (todayRes.status === 'fulfilled' && todayRes.value) todayVal = todayRes.value.value;
+    
+    // 첫 방문이면 localStorage에 기록
+    if (isFirstVisitToday) {
+      try { localStorage.setItem(LS_LAST_VISIT, today); } catch (e) {}
+    }
+    
+    // 결과 표시 (둘 다 받았을 때만)
+    if (totalVal !== null && todayVal !== null) {
+      const el = document.getElementById('visitorCount');
+      const todayEl = document.getElementById('visitorToday');
+      const totalEl = document.getElementById('visitorTotal');
+      if (el && todayEl && totalEl) {
+        todayEl.textContent = Number(todayVal).toLocaleString();
+        totalEl.textContent = Number(totalVal).toLocaleString();
+        el.hidden = false;
+      }
+    }
+  } catch (e) {
+    // 카운트 실패해도 앱 동작에 영향 없음 (조용히 숨김)
+    console.warn('[방문자 카운트] 실패:', e.message);
+  }
+}
+
+// 페이지 로드 시 백그라운드 실행
+setTimeout(trackVisitor, 500);
 
 console.log(`[처방약 매칭 도우미] 본원 약품 ${MASTER.length}개 로드 완료`);
 </script>
