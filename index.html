@@ -1002,7 +1002,7 @@
       <div class="logo">℞</div>
       <div>
         <h1>다보스병원 처방약 매칭 도우미</h1>
-        <div class="subtitle">by 심장내과 · 2026.5.13 업데이트</div>
+        <div class="subtitle">by 심장내과 · 2026.5.14 업데이트</div>
       </div>
     </div>
     <div class="meta-row">
@@ -1140,7 +1140,7 @@
     <p>대체약 매칭은 동일 성분·함량 기준이며, 제형(정/캡슐/시럽), 서방형 여부, 부형제 등은 별도 확인이 필요합니다.</p>
     <p class="data-source">한글약명 자동 식별 데이터: 건강보험심사평가원 약제급여목록표 (<strong>2026-05-01 기준</strong>)</p>
     <p class="version-info">
-      다보스병원 처방약 매칭 도우미 <strong>v18</strong> · 2026.5.13
+      다보스병원 처방약 매칭 도우미 <strong>v19</strong> · 2026.5.14
       <span class="visitor-count" id="visitorCount" hidden>
         · 오늘 <strong id="visitorToday">-</strong> · 누적 <strong id="visitorTotal">-</strong>
       </span>
@@ -2175,6 +2175,13 @@ window.addEventListener('paste', (e) => {
 // =====================================================
 const CHANGELOG = [
   {
+    version: 'v19',
+    date: '2026.5.14',
+    changes: [
+      '방문자 카운트 서비스 변경 — CountAPI → Abacus (더 안정적인 운영 서비스)',
+    ],
+  },
+  {
     version: 'v18',
     date: '2026.5.13',
     changes: [
@@ -2289,11 +2296,12 @@ function renderChangelog() {
 })();
 
 // =====================================================
-// 방문자 카운트 (CountAPI 사용 — 익명, 환자 정보 전송 0)
+// 방문자 카운트 (Abacus 사용 — 안정적, 익명, 환자 정보 전송 0)
+// https://abacus.jasoncameron.dev — Golang+Redis 기반, Jason Cameron 운영
 // =====================================================
-const COUNT_API_BASE = 'https://countapi.mileshilliard.com/api/v1';
-const COUNTER_SEED = 'efba76591021';  // 키 추측 방지용 랜덤 시드
-const TOTAL_KEY = `davos_matcher_${COUNTER_SEED}_total`;
+const ABACUS_BASE = 'https://abacus.jasoncameron.dev';
+const COUNTER_NAMESPACE = 'davos-matcher-efba76591021';  // 키 추측 방지용 랜덤 시드 포함
+const TOTAL_KEY = 'total';
 const LS_LAST_VISIT = 'pmatcher_last_visit_date';
 
 function todayKey() {
@@ -2301,7 +2309,7 @@ function todayKey() {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
-  return `davos_matcher_${COUNTER_SEED}_${y}_${m}_${day}`;
+  return `${y}_${m}_${day}`;
 }
 
 function todayDateStr() {
@@ -2318,12 +2326,13 @@ async function trackVisitor() {
   const todayK = todayKey();
   
   const endpoint = isFirstVisitToday ? 'hit' : 'get';
+  const ns = COUNTER_NAMESPACE;
   
   try {
     // 두 카운터 병렬 호출 (성공·실패 독립)
     const [totalRes, todayRes] = await Promise.allSettled([
-      fetch(`${COUNT_API_BASE}/${endpoint}/${TOTAL_KEY}`).then(r => r.ok ? r.json() : null),
-      fetch(`${COUNT_API_BASE}/${endpoint}/${todayK}`).then(r => r.ok ? r.json() : null),
+      fetch(`${ABACUS_BASE}/${endpoint}/${ns}/${TOTAL_KEY}`).then(r => r.ok ? r.json() : null),
+      fetch(`${ABACUS_BASE}/${endpoint}/${ns}/${todayK}`).then(r => r.ok ? r.json() : null),
     ]);
     
     let totalVal = null, todayVal = null;
